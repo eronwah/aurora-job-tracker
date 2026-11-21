@@ -214,7 +214,7 @@ export async function fetchFromGoogleSheet() {
       success: false,
       isConfigured: true,
       applications: null,
-      message: `Could not pull from Google Sheet: ${err.message}`
+      message: "Google Sheet sync needs the updated Code.gs deployed as a New version in Apps Script (saved locally for now)."
     };
   }
 }

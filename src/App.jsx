@@ -8,13 +8,13 @@ import ApplicationModal from './components/tracker/ApplicationModal';
 import JobDetailModal from './components/tracker/JobDetailModal';
 import JobSearchEngine from './components/search/JobSearchEngine';
 import ResumeHub from './components/resume/ResumeHub';
-import GoogleSheetSync from './components/sheet/GoogleSheetSync';
 import { 
   getStoredApplications, 
   saveStoredApplications, 
   syncToGoogleSheet,
   fetchFromGoogleSheet,
-  clearAllApplications
+  clearAllApplications,
+  exportToCsv
 } from './services/googleSheetService';
 import { getPrivateConfig, savePrivateConfig } from './services/profileConfigService';
 import { formatPhp } from './utils/currency';
@@ -25,77 +25,69 @@ import {
   Award, 
   Clock, 
   CheckCircle2,
-  FileText
+  FileText,
+  Download
 } from 'lucide-react';
 
 export default function App() {
   const [applications, setApplications] = useState([]);
   const [privateConfig, setPrivateConfig] = useState(() => getPrivateConfig());
-  const [activeTab, setActiveTab] = useState('tracker'); // tracker | search | resume | sheet
+  const [activeTab, setActiveTab] = useState('tracker'); // tracker | search | resume
   const [showSplash, setShowSplash] = useState(true);
   
   // Create/Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [defaultStageForNew, setDefaultStageForNew] = useState('applied');
-  const [defaultPlatformForNew, setDefaultPlatformForNew] = useState('LinkedIn');
 
   // Job Detail & Cover Letter Modal state
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [detailInitialTab, setDetailInitialTab] = useState('details'); // details | coverLetter
 
-  // Sync state
+  // Silent direct cloud sync state
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isPulling, setIsPulling] = useState(false);
-  const [syncStatusMessage, setSyncStatusMessage] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Track whether applications state was mutated by user interaction (for debounced auto-push)
   const hasUserMutatedRef = useRef(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3200);
   };
 
-  // Load applications on initial mount + auto-pull from Google Sheet if configured
+  // Load local applications immediately and silently pull from the connected Google Sheet
   useEffect(() => {
     const loaded = getStoredApplications();
     setApplications(loaded);
 
     const cfg = getPrivateConfig();
     if (cfg.gasWebhookUrl) {
-      setIsPulling(true);
+      setIsSyncing(true);
       fetchFromGoogleSheet()
         .then((res) => {
           if (res.success && Array.isArray(res.applications)) {
             setApplications(res.applications);
-            setSyncStatusMessage(res.message);
-          } else if (res.message) {
-            setSyncStatusMessage(res.message);
           }
         })
-        .finally(() => setIsPulling(false));
+        .finally(() => setIsSyncing(false));
     }
   }, []);
 
-  // Debounced auto-push to Google Sheet after user mutations when webhook is configured
+  // Debounced silent auto-push to Google Sheet after user changes
   useEffect(() => {
     if (!hasUserMutatedRef.current || !privateConfig.gasWebhookUrl) return;
     const timer = setTimeout(async () => {
       setIsSyncing(true);
       try {
-        const res = await syncToGoogleSheet(applications);
-        setSyncStatusMessage(res.message);
+        await syncToGoogleSheet(applications);
       } finally {
         setIsSyncing(false);
         hasUserMutatedRef.current = false;
       }
-    }, 1500);
+    }, 1400);
     return () => clearTimeout(timer);
   }, [applications, privateConfig.gasWebhookUrl]);
 
-  // Save to localStorage whenever applications change via user actions
   const updateApplications = (newApps) => {
     hasUserMutatedRef.current = true;
     setApplications(newApps);
@@ -108,7 +100,6 @@ export default function App() {
     return next;
   };
 
-  // Add or Edit Application
   const handleSaveApplication = (appData) => {
     if (editingApplication) {
       const updated = applications.map(a => a.id === appData.id ? appData : a);
@@ -122,14 +113,12 @@ export default function App() {
     setEditingApplication(null);
   };
 
-  // Update inline edits from JobDetailModal (Job Description / Cover Letter)
   const handleUpdateApplication = (updatedApp) => {
     const updated = applications.map(a => a.id === updatedApp.id ? updatedApp : a);
     updateApplications(updated);
     showToast(`Saved changes for "${updatedApp.jobTitle}"`);
   };
 
-  // Delete Application
   const handleDeleteApplication = (id) => {
     const target = applications.find(a => a.id === id);
     if (window.confirm(`Are you sure you want to remove "${target?.jobTitle || 'this application'}"?`)) {
@@ -142,7 +131,6 @@ export default function App() {
     }
   };
 
-  // Status Change (moving across pipeline)
   const handleStatusChange = (id, newStatus) => {
     const updated = applications.map(a => {
       if (a.id === id) {
@@ -158,29 +146,17 @@ export default function App() {
     showToast(`Moved application to ${newStatus}`);
   };
 
-  // Quick Add from Table Empty State
   const handleQuickAddStage = (stageId) => {
     setDefaultStageForNew(stageId);
-    setDefaultPlatformForNew('LinkedIn');
     setEditingApplication(null);
     setIsModalOpen(true);
   };
 
-  // Quick Log from Major Human Job Platform Launcher
-  const handleQuickLogFromPlatform = (platformName) => {
-    setDefaultStageForNew('applied');
-    setDefaultPlatformForNew(platformName || 'LinkedIn');
-    setEditingApplication(null);
-    setIsModalOpen(true);
-  };
-
-  // Open Job Detail & Cover Letter Modal
   const handleSelectJob = (app, tab = 'details') => {
     setSelectedJobId(app.id);
     setDetailInitialTab(tab);
   };
 
-  // Add from Suggested Remote Jobs Search
   const handleAddFromSearch = (job) => {
     const coverLetter =
       job.coverLetter ||
@@ -200,11 +176,11 @@ export default function App() {
       salaryDisplay: job.salaryDisplay || `${formatPhp(job.salaryPhp || 55000)} / mo`,
       status: 'saved',
       jobUrl: job.jobUrl || '',
-      platform: job.platform || 'Remotive',
+      platform: job.platform || 'RemoteOK',
       dateApplied: new Date().toISOString().slice(0, 10),
       followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       resumeUsed: 'Jesse_Aaron_Cuartero_Resume.pdf',
-      notes: `Suggested by Aurora Remote Search (Match Score: ${job.matchScore}%). Keywords: ${(job.matchedSkills || []).join(', ')}`,
+      notes: `Found on ${job.platform || 'Remote Board'} (Match Score: ${job.matchScore}%). Keywords: ${(job.matchedSkills || []).join(', ')}`,
       jobDescription: job.description || '',
       coverLetter,
       location: job.location || '100% Remote',
@@ -213,56 +189,39 @@ export default function App() {
     };
 
     updateApplications([newApp, ...applications]);
-    showToast(`Added "${job.title}" with description & cover letter!`);
+    showToast(`Added "${job.title}" (${job.platform}) to tracker!`);
   };
 
-  // Clear All Applications Handler (e.g. removing sample data)
   const handleClearAll = () => {
-    if (window.confirm('Clear all tracked applications (including sample data) and start fresh?')) {
+    if (window.confirm('Clear all tracked applications and start fresh?')) {
       hasUserMutatedRef.current = true;
       setApplications(clearAllApplications());
       setSelectedJobId(null);
-      showToast('Tracker cleared — ready for your real applications!');
+      showToast('Tracker cleared — ready for new applications!');
     }
   };
 
-  // Push / Sync Now Handler
+  // Direct Sync Handler (Push current local changes to connected Google Sheet, then confirm)
   const handleSyncNow = async () => {
     setIsSyncing(true);
-    setSyncStatusMessage('Pushing applications to Google Sheet...');
     try {
-      const res = await syncToGoogleSheet(applications);
-      setSyncStatusMessage(res.message);
-      showToast(res.message);
-      if (!res.isConfigured) {
-        setActiveTab('sheet');
+      if (applications.length === 0) {
+        const pullRes = await fetchFromGoogleSheet();
+        if (pullRes.success && Array.isArray(pullRes.applications)) {
+          hasUserMutatedRef.current = false;
+          setApplications(pullRes.applications);
+          showToast(pullRes.message);
+        } else {
+          showToast(pullRes.message);
+        }
+      } else {
+        const pushRes = await syncToGoogleSheet(applications);
+        showToast(pushRes.message);
       }
     } catch (err) {
-      setSyncStatusMessage(`Sync failed: ${err.message}`);
+      showToast(`Sync failed: ${err.message}`);
     } finally {
       setIsSyncing(false);
-    }
-  };
-
-  // Pull from Google Sheet Handler
-  const handlePullFromSheet = async () => {
-    setIsPulling(true);
-    setSyncStatusMessage('Pulling latest rows from Google Sheet...');
-    try {
-      const res = await fetchFromGoogleSheet();
-      if (res.success && Array.isArray(res.applications)) {
-        hasUserMutatedRef.current = false;
-        setApplications(res.applications);
-      }
-      setSyncStatusMessage(res.message);
-      showToast(res.message);
-      if (!res.isConfigured) {
-        setActiveTab('sheet');
-      }
-    } catch (err) {
-      setSyncStatusMessage(`Pull failed: ${err.message}`);
-    } finally {
-      setIsPulling(false);
     }
   };
 
@@ -275,88 +234,85 @@ export default function App() {
     .reduce((sum, a) => sum + (a.salaryPhp || 0), 0);
 
   return (
-    <div className="relative min-h-[100dvh] w-full max-w-full overflow-x-hidden text-slate-100 flex flex-col font-sans main-safe-bottom">
+    <div className="relative min-h-[100dvh] w-full max-w-full overflow-x-hidden text-zinc-100 flex flex-col font-sans main-safe-bottom">
       
       {/* Startup Professional Loading Splash Screen */}
       {showSplash && <SplashScreen onFinished={() => setShowSplash(false)} />}
 
-      {/* Background Liquid Aurora Mesh */}
+      {/* Background Graphite Gray, Silver & Yellow Mesh */}
       <BackgroundMesh />
 
-      {/* Sticky Aurora Navbar */}
+      {/* Sticky Header */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenNewModal={() => {
           setDefaultStageForNew('applied');
-          setDefaultPlatformForNew('LinkedIn');
           setEditingApplication(null);
           setIsModalOpen(true);
         }}
         applications={applications}
         onSyncNow={handleSyncNow}
-        isSyncing={isSyncing || isPulling}
-        sheetUrl={privateConfig.sheetUrl}
-        isWebhookConnected={Boolean(privateConfig.gasWebhookUrl)}
+        isSyncing={isSyncing}
       />
 
       {/* Main Content Area */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6">
         
-        {/* Top Metric Cards (Visible across all tabs for daily driver clarity) */}
+        {/* Top Metric Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           
-          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-emerald-500/20">
+          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-zinc-700/70">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400">Total Applications</span>
-              <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400">
+              <span className="text-[11px] font-semibold text-zinc-400">Total Applications</span>
+              <span className="p-1.5 rounded-lg bg-zinc-800 text-yellow-400 border border-zinc-700">
                 <TrendingUp className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
               <span className="text-xl sm:text-2xl font-black text-white">{totalApps}</span>
-              <span className="text-[11px] text-slate-400">active items</span>
+              <span className="text-[11px] text-zinc-400">active items</span>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-purple-500/20">
+          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-zinc-700/70">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400">In Interview Pipeline</span>
-              <span className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400">
+              <span className="text-[11px] font-semibold text-zinc-400">In Interview Pipeline</span>
+              <span className="p-1.5 rounded-lg bg-zinc-800 text-zinc-200 border border-zinc-700">
                 <Clock className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-xl sm:text-2xl font-black text-purple-300">{inProgressApps}</span>
-              <span className="text-[11px] text-slate-400">in stages</span>
+              <span className="text-xl sm:text-2xl font-black text-zinc-100">{inProgressApps}</span>
+              <span className="text-[11px] text-zinc-400">in stages</span>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-amber-500/20">
+          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-zinc-700/70">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400">Offers Received</span>
-              <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300">
+              <span className="text-[11px] font-semibold text-zinc-400">Offers Received</span>
+              <span className="p-1.5 rounded-lg bg-yellow-400/15 text-yellow-400 border border-yellow-400/35">
                 <Award className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-2 flex items-baseline space-x-2">
-              <span className="text-xl sm:text-2xl font-black text-emerald-400">{offersCount}</span>
-              <span className="text-[11px] text-emerald-300 font-medium">Offers</span>
+              <span className="text-xl sm:text-2xl font-black text-yellow-400">{offersCount}</span>
+              <span className="text-[11px] text-yellow-300 font-medium">Offers</span>
             </div>
           </div>
 
-          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-teal-500/20">
+          <div className="glass-panel rounded-2xl p-3.5 sm:p-4 border border-zinc-700/70">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400">Active Pipeline Volume</span>
-              <span className="p-1.5 rounded-lg bg-teal-500/15 text-teal-300">
+              <span className="text-[11px] font-semibold text-zinc-400">Active Pipeline Volume</span>
+              <span className="p-1.5 rounded-lg bg-zinc-800 text-yellow-400 border border-zinc-700">
                 <Sparkles className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-2">
-              <span className="text-base sm:text-xl font-black text-emerald-400 truncate block">
+              <span className="text-base sm:text-xl font-black text-yellow-400 truncate block">
                 {formatPhp(totalPipelinePhp)}
               </span>
-              <span className="text-[10px] text-slate-400">PHP / month potential</span>
+              <span className="text-[10px] text-zinc-400">PHP / month potential</span>
             </div>
           </div>
 
@@ -364,18 +320,29 @@ export default function App() {
 
         {/* Pure Table Header & Overview Description (Only shown on Tracker tab) */}
         {activeTab === 'tracker' && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                 Application Pipeline
               </h2>
-              <p className="text-xs text-slate-300/90 font-medium mt-0.5 flex items-start sm:items-center space-x-1.5 leading-relaxed">
-                <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <p className="text-xs text-zinc-400 font-medium mt-0.5 flex items-start sm:items-center space-x-1.5 leading-relaxed">
+                <FileText className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5 sm:mt-0" />
                 <span>
-                  Track every remote application in PHP, tap any job row for its full description &amp; human-sounding cover letter, and keep Desktop &amp; iPhone synced with Google Sheets.
+                  Track every remote application in PHP, tap any job row for its full description &amp; human cover letter, and stay synced automatically with Google Sheets.
                 </span>
               </p>
             </div>
+
+            {applications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => exportToCsv(applications)}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-200 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 transition-all"
+              >
+                <Download className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Export CSV</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -401,7 +368,6 @@ export default function App() {
             <JobSearchEngine
               onAddToTracker={handleAddFromSearch}
               existingApplications={applications}
-              onQuickLogFromPlatform={handleQuickLogFromPlatform}
             />
           )}
 
@@ -411,28 +377,14 @@ export default function App() {
               onSavePrivateConfig={handleSavePrivateConfig}
             />
           )}
-
-          {activeTab === 'sheet' && (
-            <GoogleSheetSync
-              applications={applications}
-              onSyncNow={handleSyncNow}
-              onPullFromSheet={handlePullFromSheet}
-              isSyncing={isSyncing}
-              isPulling={isPulling}
-              syncStatusMessage={syncStatusMessage}
-              privateConfig={privateConfig}
-              onSavePrivateConfig={handleSavePrivateConfig}
-            />
-          )}
         </div>
 
       </main>
 
-      {/* iPhone 17 Pro Max Safe-Area Bottom Navigation Bar */}
+      {/* iPhone 17 Pro Max Safe-Area Bottom Navigation Bar (3 Clean Tabs) */}
       <MobileNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        applicationsCount={applications.length}
       />
 
       {/* Tabbed Job Details & Cover Letter Pop-up Modal */}
@@ -460,13 +412,12 @@ export default function App() {
         onSave={handleSaveApplication}
         initialData={editingApplication}
         defaultStage={defaultStageForNew}
-        defaultPlatform={defaultPlatformForNew}
       />
 
       {/* Floating Action Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-20 lg:bottom-8 right-4 z-50 flex items-center space-x-2 px-4 py-2.5 rounded-2xl glass-panel border border-emerald-500/40 text-xs font-bold text-emerald-300 shadow-2xl animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="fixed bottom-20 lg:bottom-8 right-4 z-50 flex items-center space-x-2 px-4 py-2.5 rounded-2xl glass-panel border border-yellow-400/45 text-xs font-bold text-yellow-300 shadow-2xl">
+          <CheckCircle2 className="w-4 h-4 text-yellow-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}

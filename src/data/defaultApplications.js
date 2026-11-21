@@ -1,10 +1,10 @@
 export const PIPELINE_STAGES = [
-  { id: "saved", label: "Saved / Target", color: "indigo", badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
-  { id: "applied", label: "Applied", color: "cyan", badge: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
-  { id: "screening", label: "Screening / HR", color: "amber", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-  { id: "interview", label: "Technical / Interview", color: "violet", badge: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
-  { id: "offer", label: "Offer Received", color: "emerald", badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-  { id: "rejected", label: "Archived / Rejected", color: "slate", badge: "bg-slate-500/20 text-slate-400 border-slate-500/30" },
+  { id: "saved", label: "Saved / Target", color: "zinc", badge: "bg-zinc-700/40 text-zinc-200 border-zinc-500/40" },
+  { id: "applied", label: "Applied", color: "silver", badge: "bg-zinc-300/15 text-zinc-100 border-zinc-300/35" },
+  { id: "screening", label: "Screening / HR", color: "amber", badge: "bg-amber-400/15 text-amber-300 border-amber-400/35" },
+  { id: "interview", label: "Technical / Interview", color: "yellow", badge: "bg-yellow-400/20 text-yellow-300 border-yellow-400/40" },
+  { id: "offer", label: "Offer Received", color: "gold", badge: "bg-yellow-400 text-zinc-950 border-yellow-300 font-bold" },
+  { id: "rejected", label: "Archived / Rejected", color: "slate", badge: "bg-zinc-800/70 text-zinc-400 border-zinc-700/80" },
 ];
 
 export const SAMPLE_DEMO_SIGNATURES = [

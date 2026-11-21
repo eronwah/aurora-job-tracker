@@ -1,13 +1,13 @@
 {
   "name": "Aurora Jobs — Remote Career Command Center",
   "short_name": "AuroraJobs",
-  "description": "Track remote job applications, search LinkedIn, Indeed, Upwork & non-AI remote boards, tailor human cover letters, and sync with Google Sheets.",
+  "description": "Track remote job applications, search verified non-AI remote job boards, tailor human cover letters, and sync directly with Google Sheets.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#08040d",
-  "theme_color": "#08040d",
+  "background_color": "#0b0c0e",
+  "theme_color": "#0b0c0e",
   "icons": [
     {
       "src": "./apple-touch-icon.svg",

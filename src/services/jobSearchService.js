@@ -5,7 +5,7 @@ import { generateHumanCoverLetter } from "../utils/coverLetterGenerator";
 /**
  * Domain/website-only blacklist of AI-operated job websites and AI auto-apply portals.
  * NOTE: This ONLY excludes AI-run job platforms by website domain/platform name—it NEVER
- * excludes legitimate job postings on human platforms that mention AI tools or automation.
+ * excludes legitimate job postings that mention AI tools or automation matching your resume.
  */
 export const AI_JOB_PLATFORM_DOMAINS = [
   "lazyapply",
@@ -37,91 +37,12 @@ export const AI_JOB_PLATFORM_DOMAINS = [
 ];
 
 export const SKILL_SEARCH_PRESETS = [
-  { id: "ops", label: "Operations & DB Admin", query: "Database Operations Administrator" },
-  { id: "workspace", label: "Google Sheets / Apps Script", query: "Google Sheets Apps Script" },
-  { id: "customer", label: "Customer Operations", query: "Customer Operations Specialist" },
-  { id: "qa", label: "QA & SOP Specialist", query: "Quality Assurance SOP" },
-  { id: "automation", label: "Workflow Automation", query: "Workflow Automation Operations" }
+  { id: "ops", label: "Operations & DB Admin", query: "Operations" },
+  { id: "workspace", label: "Google Sheets / Admin", query: "Admin" },
+  { id: "customer", label: "Customer Support", query: "Customer" },
+  { id: "qa", label: "QA & Compliance", query: "Quality" },
+  { id: "data", label: "Data & Automation", query: "Data" }
 ];
-
-/**
- * Builds pre-filtered strictly-remote search URLs across major established
- * human job platforms (LinkedIn, Indeed, Upwork, OnlineJobs.ph, JobStreet PH, WeWorkRemotely).
- */
-export function buildMajorPlatformSearches(keyword = "") {
-  const cleanKw = keyword.trim() || "Operations Administrator Google Sheets";
-  const encoded = encodeURIComponent(cleanKw);
-  const slug = cleanKw
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "operations-specialist";
-
-  return [
-    {
-      id: "linkedin",
-      name: "LinkedIn Jobs",
-      platformValue: "LinkedIn",
-      badge: "Remote Filter (f_WT=2)",
-      description: "Global & APAC remote openings with verified company pages and direct hiring teams.",
-      url: `https://www.linkedin.com/jobs/search/?keywords=${encoded}&f_WT=2`,
-      accent: "cyan"
-    },
-    {
-      id: "indeed-ph",
-      name: "Indeed Philippines",
-      platformValue: "Indeed",
-      badge: "PH Remote Filter",
-      description: "Remote roles open to Philippines-based applicants with local & USD-equivalent PHP pay.",
-      url: `https://ph.indeed.com/jobs?q=${encoded}&l=Remote`,
-      accent: "indigo"
-    },
-    {
-      id: "indeed-global",
-      name: "Indeed Worldwide",
-      platformValue: "Indeed",
-      badge: "Strict Remote Filter",
-      description: "International remote listings filtered strictly to Remote positions.",
-      url: `https://www.indeed.com/jobs?q=${encoded}&sc=0kf%3Aattr(DSQF7)%3B`,
-      accent: "purple"
-    },
-    {
-      id: "upwork",
-      name: "Upwork",
-      platformValue: "Upwork",
-      badge: "Newest Contracts",
-      description: "Hourly & fixed-price remote operations, Google Workspace, and automation contracts.",
-      url: `https://www.upwork.com/nx/search/jobs/?q=${encoded}&sort=recency`,
-      accent: "emerald"
-    },
-    {
-      id: "onlinejobs",
-      name: "OnlineJobs.ph",
-      platformValue: "OnlineJobs.ph",
-      badge: "PH Direct Employers",
-      description: "Direct long-term remote roles with international clients hiring in PHP (₱40k–₱70k+).",
-      url: `https://www.onlinejobs.ph/jobseekers/jobsearch?jobkeyword=${encoded}`,
-      accent: "teal"
-    },
-    {
-      id: "jobstreet",
-      name: "JobStreet PH",
-      platformValue: "JobStreet PH",
-      badge: "Work From Home",
-      description: "Verified Philippine & BPO/corporate roles filtered to Work From Home setups.",
-      url: `https://ph.jobstreet.com/${slug}-jobs/work-from-home`,
-      accent: "amber"
-    },
-    {
-      id: "wwr",
-      name: "WeWorkRemotely",
-      platformValue: "WeWorkRemotely",
-      badge: "100% Remote Board",
-      description: "Human-moderated remote job board for operations, support, and systems roles.",
-      url: `https://weworkremotely.com/remote-jobs/search?term=${encoded}`,
-      accent: "emerald"
-    }
-  ];
-}
 
 function decodeHtmlEntities(str = "") {
   return str
@@ -150,7 +71,7 @@ function cleanJobDescriptionHtml(html = "") {
 
 /**
  * Checks ONLY the job listing's URL hostname / platform origin against AI_JOB_PLATFORM_DOMAINS.
- * Does NOT penalize or filter out legitimate roles mentioning AI skills in job titles/descriptions.
+ * Does NOT exclude legitimate roles mentioning AI skills or automation in job titles/descriptions.
  */
 function isAiJobPlatformUrl(url = "", platform = "") {
   let host = "";
@@ -193,6 +114,51 @@ async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function fetchRemoteOkJobs() {
+  const data = await fetchJsonWithTimeout("https://remoteok.com/api");
+  if (!Array.isArray(data)) return [];
+
+  // Index 0 is a legal notice object without `position`
+  return data
+    .filter((job) => {
+      if (!job || !job.position || !job.company) return false;
+      const targetUrl = job.apply_url || job.url || "";
+      if (isAiJobPlatformUrl(targetUrl, "RemoteOK")) return false;
+      return isStrictRemoteLocation(job.location);
+    })
+    .slice(0, 35)
+    .map((job) => {
+      let salaryPhp = 55000;
+      let salaryDisplay = "Salary not listed (Target ₱40k–₱70k)";
+      const minAnnual = Number(job.salary_min);
+      const maxAnnual = Number(job.salary_max);
+      if (minAnnual > 0) {
+        const minMonthlyPhp = Math.round((minAnnual / 12) * USD_TO_PHP_RATE);
+        const maxMonthlyPhp =
+          maxAnnual > 0 ? Math.round((maxAnnual / 12) * USD_TO_PHP_RATE) : minMonthlyPhp;
+        salaryPhp = minMonthlyPhp;
+        salaryDisplay =
+          minMonthlyPhp === maxMonthlyPhp
+            ? `${formatPhp(minMonthlyPhp)} / mo`
+            : `${formatPhp(minMonthlyPhp)} - ${formatPhp(maxMonthlyPhp)} / mo`;
+      }
+
+      return {
+        id: `ROK-${job.id || job.slug}`,
+        title: decodeHtmlEntities(job.position || ""),
+        company: decodeHtmlEntities(job.company || ""),
+        location: job.location ? `${job.location} (Remote)` : "100% Remote (Worldwide)",
+        platform: "RemoteOK",
+        jobUrl: job.url || job.apply_url || "https://remoteok.com",
+        salaryPhp,
+        salaryDisplay,
+        description: cleanJobDescriptionHtml(job.description || ""),
+        tags: Array.isArray(job.tags) && job.tags.length ? job.tags : ["Remote"],
+        datePosted: formatDateRelative(job.date || job.epoch)
+      };
+    });
 }
 
 async function fetchRemotiveJobs(keyword = "") {
@@ -313,7 +279,7 @@ async function fetchArbeitnowJobs() {
       if (isAiJobPlatformUrl(job.url, "Arbeitnow")) return false;
       return true;
     })
-    .slice(0, 40)
+    .slice(0, 35)
     .map((job) => ({
       id: `ARB-${job.slug}`,
       title: decodeHtmlEntities(job.title || ""),
@@ -330,30 +296,33 @@ async function fetchArbeitnowJobs() {
 }
 
 /**
- * Searches 100% live remote jobs from non-AI verified remote boards
- * (Remotive, Jobicy, Arbeitnow) while keeping legitimate resume-matching roles
- * (including AI/automation tools roles) and excluding only AI-run job websites.
+ * Searches 100% live remote jobs from established non-AI remote boards
+ * (RemoteOK, Remotive, Jobicy, Arbeitnow) while tagging each job's exact website/platform
+ * and keeping legitimate resume-matching roles (including AI tools/automation).
  */
 export async function searchRemoteJobs({
   keyword = "",
   category = "all"
 } = {}) {
-  const [remotiveRes, jobicyRes, arbeitnowRes] = await Promise.allSettled([
+  const [remoteOkRes, remotiveRes, jobicyRes, arbeitnowRes] = await Promise.allSettled([
+    fetchRemoteOkJobs(),
     fetchRemotiveJobs(keyword),
     fetchJobicyJobs(keyword),
     fetchArbeitnowJobs()
   ]);
 
+  const remoteOkJobs = remoteOkRes.status === "fulfilled" ? remoteOkRes.value : [];
   const remotiveJobs = remotiveRes.status === "fulfilled" ? remotiveRes.value : [];
   const jobicyJobs = jobicyRes.status === "fulfilled" ? jobicyRes.value : [];
   const arbeitnowJobs = arbeitnowRes.status === "fulfilled" ? arbeitnowRes.value : [];
 
   const allFailed =
+    remoteOkRes.status === "rejected" &&
     remotiveRes.status === "rejected" &&
     jobicyRes.status === "rejected" &&
     arbeitnowRes.status === "rejected";
 
-  const combinedPool = [...remotiveJobs, ...jobicyJobs, ...arbeitnowJobs];
+  const combinedPool = [...remoteOkJobs, ...remotiveJobs, ...jobicyJobs, ...arbeitnowJobs];
 
   // Deduplicate by normalized url or title+company
   const seenKeys = new Set();
@@ -416,6 +385,7 @@ export async function searchRemoteJobs({
   filtered.sort((a, b) => b.matchScore - a.matchScore);
 
   const sources = {
+    remoteok: filtered.filter((j) => j.platform === "RemoteOK").length,
     remotive: filtered.filter((j) => j.platform === "Remotive").length,
     jobicy: filtered.filter((j) => j.platform === "Jobicy").length,
     arbeitnow: filtered.filter((j) => j.platform === "Arbeitnow").length
@@ -425,7 +395,7 @@ export async function searchRemoteJobs({
     jobs: filtered,
     sources,
     error: allFailed
-      ? "Could not reach live remote feeds right now, but you can still launch LinkedIn, Indeed, Upwork, OnlineJobs.ph, and JobStreet PH directly above."
+      ? "Could not reach live remote job boards right now. Check your internet/mobile data connection and tap Retry."
       : null
   };
 }

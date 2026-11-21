@@ -1,18 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#140926"/>
-      <stop offset="50%" stop-color="#0d0718"/>
-      <stop offset="100%" stop-color="#071a18"/>
+      <stop offset="0%" stop-color="#1c1f24"/>
+      <stop offset="55%" stop-color="#111317"/>
+      <stop offset="100%" stop-color="#0b0c0e"/>
     </linearGradient>
     <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00e599"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
+      <stop offset="0%" stop-color="#facc15"/>
+      <stop offset="50%" stop-color="#d4d4d8"/>
+      <stop offset="100%" stop-color="#71717a"/>
     </linearGradient>
   </defs>
   <rect width="180" height="180" rx="40" fill="url(#bg)"/>
-  <rect x="6" y="6" width="168" height="168" rx="36" fill="none" stroke="url(#ring)" stroke-opacity="0.35" stroke-width="3"/>
-  <rect x="38" y="62" width="104" height="74" rx="14" fill="none" stroke="#00e599" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M68 62V46a10 10 0 0 1 10-10h24a10 10 0 0 1 10 10v16" fill="none" stroke="#00e599" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="90" cy="98" r="7" fill="#00e599"/>
+  <rect x="6" y="6" width="168" height="168" rx="36" fill="none" stroke="url(#ring)" stroke-opacity="0.45" stroke-width="3"/>
+  <rect x="38" y="62" width="104" height="74" rx="14" fill="none" stroke="#facc15" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M68 62V46a10 10 0 0 1 10-10h24a10 10 0 0 1 10 10v16" fill="none" stroke="#d4d4d8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90" cy="98" r="7" fill="#facc15"/>
 </svg>

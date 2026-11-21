@@ -12,7 +12,8 @@ import {
   Plus,
   RotateCcw,
   ArrowUpDown,
-  Briefcase
+  Briefcase,
+  Globe2
 } from 'lucide-react';
 
 export default function TableView({
@@ -27,7 +28,7 @@ export default function TableView({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('recent'); // recent | salary | match | followUp
+  const [sortBy, setSortBy] = useState('recent');
 
   const filtered = applications
     .filter(app => {
@@ -55,7 +56,6 @@ export default function TableView({
         const dateB = b.followUpDate ? new Date(b.followUpDate).getTime() : Number.MAX_SAFE_INTEGER;
         return dateA - dateB;
       }
-      // Default: Newest Updated
       const updA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
       const updB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
       return updB - updA;
@@ -67,8 +67,8 @@ export default function TableView({
   };
 
   return (
-    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-purple-500/20 space-y-5">
-      {/* Stage Filter Pills (Horizontally scrollable on iPhone 17 Pro Max, wrapped on Desktop) */}
+    <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-zinc-700/70 space-y-5">
+      {/* Stage Filter Pills */}
       <div className="overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
         <div className="flex sm:flex-wrap items-center gap-2 min-w-max sm:min-w-0">
           <button
@@ -76,16 +76,16 @@ export default function TableView({
             onClick={() => setSelectedStatus('all')}
             className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
               selectedStatus === 'all'
-                ? 'bg-gradient-to-r from-emerald-500/25 to-purple-600/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                : 'bg-slate-900/70 text-slate-400 hover:text-slate-200 border border-slate-800'
+                ? 'bg-yellow-400/15 text-yellow-300 border border-yellow-400/45 shadow-sm'
+                : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 border border-zinc-800'
             }`}
           >
             <span>All</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                 selectedStatus === 'all'
-                  ? 'bg-emerald-400 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300'
+                  ? 'bg-yellow-400 text-zinc-950 font-extrabold'
+                  : 'bg-zinc-800 text-zinc-300'
               }`}
             >
               {applications.length}
@@ -102,14 +102,14 @@ export default function TableView({
                 onClick={() => setSelectedStatus(stage.id)}
                 className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-emerald-500/25 to-purple-600/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'bg-slate-900/70 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    ? 'bg-yellow-400/15 text-yellow-300 border border-yellow-400/45 shadow-sm'
+                    : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 border border-zinc-800'
                 }`}
               >
                 <span>{stage.label}</span>
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                    isActive ? 'bg-emerald-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'
+                    isActive ? 'bg-yellow-400 text-zinc-950 font-extrabold' : 'bg-zinc-800 text-zinc-300'
                   }`}
                 >
                   {count}
@@ -123,7 +123,7 @@ export default function TableView({
       {/* Search & Sort Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search by job title, company, platform, or description..."
@@ -135,7 +135,7 @@ export default function TableView({
 
         <div className="flex items-center space-x-2">
           <div className="relative flex items-center flex-1 sm:flex-initial">
-            <ArrowUpDown className="w-3.5 h-3.5 text-emerald-400 absolute left-3 pointer-events-none" />
+            <ArrowUpDown className="w-3.5 h-3.5 text-yellow-400 absolute left-3 pointer-events-none" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -153,8 +153,8 @@ export default function TableView({
             <button
               type="button"
               onClick={onClearAll}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-300 bg-slate-900/70 hover:bg-rose-500/15 border border-slate-800 hover:border-rose-500/30 transition-all whitespace-nowrap"
-              title="Clear all tracked applications (e.g. remove sample data)"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-rose-300 bg-zinc-900/80 hover:bg-rose-500/15 border border-zinc-800 hover:border-rose-500/30 transition-all whitespace-nowrap"
+              title="Clear all tracked applications"
             >
               Clear All
             </button>
@@ -164,8 +164,8 @@ export default function TableView({
 
       {/* Empty State / Clean Onboarding */}
       {filtered.length === 0 ? (
-        <div className="py-12 px-5 text-center rounded-2xl border border-dashed border-emerald-500/25 bg-slate-900/40 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+        <div className="py-12 px-5 text-center rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/40 space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-yellow-400/15 border border-yellow-400/35 flex items-center justify-center mx-auto text-yellow-400">
             <Briefcase className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
@@ -174,10 +174,10 @@ export default function TableView({
                 ? 'Your Remote Job Pipeline Is Clean & Ready'
                 : 'No matching applications found'}
             </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-zinc-400 leading-relaxed">
               {applications.length === 0
-                ? 'Search strictly remote openings across LinkedIn, Indeed, Upwork, OnlineJobs.ph, and verified non-AI feeds, or log an application manually with an instant human-sounding cover letter.'
-                : 'No applications match your current stage pill or search filter. Try resetting filters or adding a new job.'}
+                ? 'Search live remote jobs across RemoteOK, Remotive, Jobicy, and Arbeitnow with clear platform tags, or log an application manually with a ready-to-paste human cover letter.'
+                : 'No applications match your current stage filter or search query. Try resetting filters or adding a new job.'}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
@@ -185,7 +185,7 @@ export default function TableView({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-zinc-200 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-all"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Filters</span>
@@ -195,17 +195,17 @@ export default function TableView({
               <button
                 type="button"
                 onClick={onOpenSearch}
-                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/35 transition-all"
+                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-100 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 transition-all"
               >
-                <Search className="w-3.5 h-3.5" />
-                <span>Search Major Job Platforms</span>
+                <Search className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Search Remote Jobs</span>
               </button>
             )}
             {onQuickAdd && (
               <button
                 type="button"
                 onClick={() => onQuickAdd(selectedStatus === 'all' ? 'applied' : selectedStatus)}
-                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 shadow-md shadow-emerald-500/20 transition-all"
+                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-950 bg-gradient-to-r from-yellow-400 to-amber-300 hover:from-yellow-300 shadow-md shadow-yellow-400/20 transition-all"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>{applications.length === 0 ? 'Add First Application' : 'Add Job'}</span>
@@ -216,9 +216,9 @@ export default function TableView({
       ) : (
         <>
           {/* DESKTOP VIEW: Clean Full-Width Pure Table */}
-          <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-800/90 bg-slate-950/35">
+          <div className="hidden md:block overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-950/50">
             <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-slate-900/85 text-slate-400 font-semibold border-b border-slate-800">
+              <thead className="bg-zinc-900/90 text-zinc-400 font-semibold border-b border-zinc-800">
                 <tr>
                   <th className="py-3.5 px-3">Job Title &amp; Company</th>
                   <th className="py-3.5 px-3">Salary (PHP)</th>
@@ -228,32 +228,32 @@ export default function TableView({
                   <th className="py-3.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-200">
+              <tbody className="divide-y divide-zinc-800/80 text-zinc-200">
                 {filtered.map((app) => {
                   const stage = PIPELINE_STAGES.find(s => s.id === app.status) || PIPELINE_STAGES[0];
                   return (
                     <tr
                       key={app.id}
                       onClick={() => onSelectJob && onSelectJob(app, 'details')}
-                      className="hover:bg-emerald-500/5 transition-colors cursor-pointer group"
+                      className="hover:bg-yellow-400/5 transition-colors cursor-pointer group"
                     >
                       {/* Job Title, Company & Hint */}
                       <td className="py-3.5 px-3 max-w-[260px]">
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-white group-hover:text-emerald-300 transition-colors truncate">
+                          <span className="font-bold text-white group-hover:text-yellow-300 transition-colors truncate">
                             {app.jobTitle}
                           </span>
                           {app.matchScore && (
-                            <span className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
+                            <span className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-400/15 text-yellow-300 border border-yellow-400/35 flex-shrink-0">
                               <Sparkles className="w-2.5 h-2.5" />
                               <span>{app.matchScore}%</span>
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center space-x-1.5 mt-0.5 text-xs text-slate-400 truncate">
-                          <span className="font-medium text-slate-300 truncate">{app.company}</span>
-                          <span className="text-slate-600">&bull;</span>
-                          <span className="inline-flex items-center space-x-1 text-[11px] text-emerald-400/80 group-hover:text-emerald-300 flex-shrink-0">
+                        <div className="flex items-center space-x-1.5 mt-0.5 text-xs text-zinc-400 truncate">
+                          <span className="font-medium text-zinc-300 truncate">{app.company}</span>
+                          <span className="text-zinc-600">&bull;</span>
+                          <span className="inline-flex items-center space-x-1 text-[11px] text-yellow-400/85 group-hover:text-yellow-300 flex-shrink-0">
                             <FileText className="w-3 h-3" />
                             <span>Details &amp; letter</span>
                           </span>
@@ -261,7 +261,7 @@ export default function TableView({
                       </td>
 
                       {/* Salary */}
-                      <td className="py-3.5 px-3 font-bold text-emerald-400 whitespace-nowrap">
+                      <td className="py-3.5 px-3 font-bold text-yellow-400 whitespace-nowrap">
                         {app.salaryPhp ? `${formatPhp(app.salaryPhp)} / mo` : (app.salaryDisplay || '—')}
                       </td>
 
@@ -277,25 +277,26 @@ export default function TableView({
                           aria-label={`Change status for ${app.jobTitle}`}
                         >
                           {PIPELINE_STAGES.map(s => (
-                            <option key={s.id} value={s.id} className="bg-slate-900 text-slate-200">
+                            <option key={s.id} value={s.id} className="bg-zinc-900 text-zinc-200">
                               {s.label}
                             </option>
                           ))}
                         </select>
                       </td>
 
-                      {/* Platform */}
-                      <td className="py-3.5 px-3 text-slate-300 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-800/90 text-[11px] font-medium border border-slate-700">
-                          {app.platform || 'Direct'}
+                      {/* Prominent Platform */}
+                      <td className="py-3.5 px-3 text-zinc-200 whitespace-nowrap">
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-200 text-[11px] font-semibold border border-zinc-600/80">
+                          <Globe2 className="w-3 h-3 text-yellow-400" />
+                          <span>{app.platform || 'Direct'}</span>
                         </span>
                       </td>
 
                       {/* Applied & Follow-up */}
                       <td className="py-3.5 px-3 hidden lg:table-cell text-xs whitespace-nowrap">
-                        <div className="text-slate-300">{app.dateApplied || '—'}</div>
+                        <div className="text-zinc-300">{app.dateApplied || '—'}</div>
                         {app.followUpDate && (
-                          <div className="text-[11px] text-amber-400 font-medium mt-0.5">
+                          <div className="text-[11px] text-amber-300 font-medium mt-0.5">
                             Follow-up: {app.followUpDate}
                           </div>
                         )}
@@ -310,7 +311,7 @@ export default function TableView({
                           <button
                             type="button"
                             onClick={() => onSelectJob && onSelectJob(app, 'coverLetter')}
-                            className="inline-flex items-center space-x-1 px-2 py-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-[11px] font-semibold transition-all"
+                            className="inline-flex items-center space-x-1 px-2 py-1.5 rounded-lg bg-yellow-400/15 hover:bg-yellow-400/25 text-yellow-300 border border-yellow-400/35 text-[11px] font-semibold transition-all"
                             title="Open Cover Letter"
                           >
                             <Mail className="w-3.5 h-3.5" />
@@ -322,7 +323,7 @@ export default function TableView({
                               href={app.jobUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-300 transition-all"
+                              className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-yellow-300 transition-all"
                               title="Open Job Link"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -332,7 +333,7 @@ export default function TableView({
                           <button
                             type="button"
                             onClick={() => onEdit(app)}
-                            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-purple-500/20 text-slate-400 hover:text-purple-300 transition-all"
+                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-all"
                             title="Edit Application"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -341,7 +342,7 @@ export default function TableView({
                           <button
                             type="button"
                             onClick={() => onDelete(app.id)}
-                            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-all"
+                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-all"
                             title="Delete Application"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -355,35 +356,36 @@ export default function TableView({
             </table>
           </div>
 
-          {/* MOBILE VIEW (iPhone 17 Pro Max): Compact Tappable Table-Rows without Horizontal Scroll */}
-          <div className="md:hidden rounded-2xl border border-slate-800/90 bg-slate-950/40 divide-y divide-slate-800/70 overflow-hidden">
+          {/* MOBILE VIEW (iPhone 17 Pro Max): Compact Tappable Rows */}
+          <div className="md:hidden rounded-2xl border border-zinc-800 bg-zinc-950/50 divide-y divide-zinc-800/80 overflow-hidden">
             {filtered.map((app) => {
               const stage = PIPELINE_STAGES.find(s => s.id === app.status) || PIPELINE_STAGES[0];
               return (
                 <div
                   key={app.id}
                   onClick={() => onSelectJob && onSelectJob(app, 'details')}
-                  className="p-4 active:bg-emerald-500/10 transition-colors cursor-pointer space-y-2.5"
+                  className="p-4 active:bg-yellow-400/10 transition-colors cursor-pointer space-y-2.5"
                 >
                   {/* Top Line: Title + PHP Salary */}
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="text-sm font-bold text-white leading-snug flex-1">
                       {app.jobTitle}
                     </h4>
-                    <span className="text-xs font-extrabold text-emerald-400 whitespace-nowrap bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                    <span className="text-xs font-extrabold text-yellow-400 whitespace-nowrap bg-yellow-400/10 px-2 py-0.5 rounded-lg border border-yellow-400/25">
                       {app.salaryPhp ? `${formatPhp(app.salaryPhp)}` : (app.salaryDisplay || '—')}
                     </span>
                   </div>
 
-                  {/* Second Line: Company + Platform + Match */}
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
-                    <span className="font-semibold text-slate-200">{app.company}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] border border-slate-700">
-                      {app.platform || 'Direct'}
+                  {/* Second Line: Company + Prominent Platform + Match */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300">
+                    <span className="font-semibold text-zinc-200">{app.company}</span>
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-yellow-400/15 text-yellow-300 text-[10px] font-bold border border-yellow-400/35">
+                      <Globe2 className="w-2.5 h-2.5" />
+                      <span>{app.platform || 'Direct'}</span>
                     </span>
                     {app.matchScore && (
-                      <span className="inline-flex items-center space-x-0.5 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/25">
-                        <Sparkles className="w-2.5 h-2.5" />
+                      <span className="inline-flex items-center space-x-0.5 text-[10px] font-bold text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">
+                        <Sparkles className="w-2.5 h-2.5 text-yellow-400" />
                         <span>{app.matchScore}%</span>
                       </span>
                     )}
@@ -401,7 +403,7 @@ export default function TableView({
                       aria-label={`Change status for ${app.jobTitle}`}
                     >
                       {PIPELINE_STAGES.map(s => (
-                        <option key={s.id} value={s.id} className="bg-slate-900 text-slate-200">
+                        <option key={s.id} value={s.id} className="bg-zinc-900 text-zinc-200">
                           {s.label}
                         </option>
                       ))}
@@ -411,7 +413,7 @@ export default function TableView({
                       <button
                         type="button"
                         onClick={() => onSelectJob && onSelectJob(app, 'coverLetter')}
-                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-200 border border-purple-500/35 text-[11px] font-semibold"
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-yellow-400/15 text-yellow-300 border border-yellow-400/35 text-[11px] font-semibold"
                       >
                         <Mail className="w-3 h-3" />
                         <span>Cover Letter</span>
@@ -422,7 +424,7 @@ export default function TableView({
                           href={app.jobUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700"
+                          className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700"
                           title="Open Link"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -432,7 +434,7 @@ export default function TableView({
                       <button
                         type="button"
                         onClick={() => onEdit(app)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700"
+                        className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700"
                         title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />

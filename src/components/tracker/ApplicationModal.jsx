@@ -102,22 +102,23 @@ export default function ApplicationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] bg-black/75 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg glass-panel rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 border border-emerald-500/25 shadow-2xl shadow-emerald-500/10 max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] sm:max-h-[90dvh] overflow-y-auto safe-bottom">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg glass-panel rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 border border-zinc-600/60 shadow-2xl shadow-black/70 max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] sm:max-h-[90dvh] overflow-y-auto safe-bottom bg-[#14161a]/95">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
           <div>
             <h3 className="text-lg font-bold text-white">
               {initialData ? 'Edit Job Application' : 'Add New Job Application'}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Syncs directly with your Google Sheet and local tracker.
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Automatically syncs to your connected Google Sheet.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -126,10 +127,9 @@ export default function ApplicationModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs sm:text-sm">
           
-          {/* Job Title */}
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">
-              Job Title <span className="text-emerald-400">*</span>
+            <label className="block font-semibold text-zinc-300 mb-1.5">
+              Job Title <span className="text-yellow-400">*</span>
             </label>
             <input
               type="text"
@@ -141,16 +141,15 @@ export default function ApplicationModal({
             />
           </div>
 
-          {/* Company & Platform */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
-                Company Name <span className="text-emerald-400">*</span>
+              <label className="block font-semibold text-zinc-300 mb-1.5">
+                Company Name <span className="text-yellow-400">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. CloudScale Dynamics"
+                placeholder="e.g. Acme Remote Co."
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input"
@@ -158,7 +157,7 @@ export default function ApplicationModal({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">Platform</label>
+              <label className="block font-semibold text-zinc-300 mb-1.5">Platform / Website</label>
               <select
                 value={formData.platform}
                 onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
@@ -169,22 +168,22 @@ export default function ApplicationModal({
                 <option value="Upwork">Upwork</option>
                 <option value="OnlineJobs.ph">OnlineJobs.ph</option>
                 <option value="JobStreet PH">JobStreet PH</option>
-                <option value="WeWorkRemotely">WeWorkRemotely</option>
+                <option value="RemoteOK">RemoteOK</option>
                 <option value="Remotive">Remotive</option>
                 <option value="Jobicy">Jobicy</option>
                 <option value="Arbeitnow">Arbeitnow</option>
+                <option value="WeWorkRemotely">WeWorkRemotely</option>
                 <option value="Company Direct">Company Direct</option>
               </select>
             </div>
           </div>
 
-          {/* Salary in PHP */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="font-semibold text-slate-300">
+              <label className="font-semibold text-zinc-300">
                 Salary in PHP (Monthly Target)
               </label>
-              <span className="text-emerald-400 font-bold">{formatPhp(formData.salaryPhp)} / mo</span>
+              <span className="text-yellow-400 font-bold">{formatPhp(formData.salaryPhp)} / mo</span>
             </div>
 
             <input
@@ -202,7 +201,6 @@ export default function ApplicationModal({
               className="w-full px-3.5 py-2.5 rounded-xl glass-input mb-2"
             />
 
-            {/* Quick PHP Presets */}
             <div className="flex flex-wrap gap-1.5">
               {[45000, 50000, 55000, 60000, 65000, 70000].map(amount => (
                 <button
@@ -211,8 +209,8 @@ export default function ApplicationModal({
                   onClick={() => handleSalaryPreset(amount)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                     formData.salaryPhp === amount
-                      ? 'bg-emerald-500 text-slate-950 font-bold'
-                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
+                      ? 'bg-yellow-400 text-zinc-950 font-bold'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
                   {formatPhp(amount)}
@@ -221,10 +219,9 @@ export default function ApplicationModal({
             </div>
           </div>
 
-          {/* Status Pipeline & Resume Used */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">Pipeline Stage</label>
+              <label className="block font-semibold text-zinc-300 mb-1.5">Pipeline Stage</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -239,7 +236,7 @@ export default function ApplicationModal({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">Resume Attached</label>
+              <label className="block font-semibold text-zinc-300 mb-1.5">Resume Attached</label>
               <input
                 type="text"
                 value={formData.resumeUsed}
@@ -249,9 +246,8 @@ export default function ApplicationModal({
             </div>
           </div>
 
-          {/* Job URL Link */}
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">Job Posting URL</label>
+            <label className="block font-semibold text-zinc-300 mb-1.5">Job Posting URL</label>
             <input
               type="url"
               placeholder="https://..."
@@ -261,10 +257,9 @@ export default function ApplicationModal({
             />
           </div>
 
-          {/* Date Applied & Follow Up Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">Date Applied</label>
+              <label className="block font-semibold text-zinc-300 mb-1.5">Date Applied</label>
               <input
                 type="date"
                 value={formData.dateApplied}
@@ -274,7 +269,7 @@ export default function ApplicationModal({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">Next Follow-Up</label>
+              <label className="block font-semibold text-zinc-300 mb-1.5">Next Follow-Up</label>
               <input
                 type="date"
                 value={formData.followUpDate}
@@ -284,9 +279,8 @@ export default function ApplicationModal({
             </div>
           </div>
 
-          {/* Job Description */}
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">Job Description</label>
+            <label className="block font-semibold text-zinc-300 mb-1.5">Job Description</label>
             <textarea
               rows="4"
               placeholder="Paste the full job description here so you can read it later inside the tracker modal..."
@@ -296,16 +290,15 @@ export default function ApplicationModal({
             />
           </div>
 
-          {/* Cover Letter */}
           <div>
             <div className="flex items-center justify-between mb-1.5 gap-2">
-              <label className="font-semibold text-slate-300">Cover Letter (Ready to Paste)</label>
+              <label className="font-semibold text-zinc-300">Cover Letter (Ready to Paste)</label>
               <button
                 type="button"
                 onClick={handleAutoGenerateCoverLetter}
-                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/35 transition-all"
+                className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-yellow-400/15 hover:bg-yellow-400/25 text-yellow-300 border border-yellow-400/35 transition-all"
               >
-                <Sparkles className="w-3 h-3 text-emerald-400" />
+                <Sparkles className="w-3 h-3 text-yellow-400" />
                 <span>Auto-Generate Human Cover Letter</span>
               </button>
             </div>
@@ -318,30 +311,28 @@ export default function ApplicationModal({
             />
           </div>
 
-          {/* Notes */}
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">Notes &amp; Context</label>
+            <label className="block font-semibold text-zinc-300 mb-1.5">Notes &amp; Context</label>
             <textarea
               rows="2"
-              placeholder="e.g. Highlighted Google Workspace receipt automation experience in cover letter."
+              placeholder="e.g. Highlighted Google Workspace automation experience."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full px-3.5 py-2 rounded-xl glass-input resize-none"
             />
           </div>
 
-          {/* Footer Submit Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 font-medium transition-all"
+              className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 font-medium transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 shadow-lg shadow-emerald-500/25 transition-all"
+              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl font-bold text-zinc-950 bg-gradient-to-r from-yellow-400 to-amber-300 hover:from-yellow-300 hover:to-amber-200 shadow-lg shadow-yellow-400/20 transition-all"
             >
               <Save className="w-4 h-4" />
               <span>{initialData ? 'Save Changes' : 'Create Application'}</span>
