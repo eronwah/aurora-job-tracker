@@ -1,4 +1,4 @@
-import { defaultApplications, PIPELINE_STAGES } from "../data/defaultApplications";
+import { defaultApplications, PIPELINE_STAGES, SAMPLE_DEMO_SIGNATURES } from "../data/defaultApplications";
 import { generateHumanCoverLetter } from "../utils/coverLetterGenerator";
 import { calculateMatchScore } from "../utils/matchScore";
 import { formatPhp } from "../utils/currency";
@@ -56,43 +56,45 @@ function normalizeSheetRow(row, index) {
 }
 
 /**
- * Get current applications from local storage (or defaults),
- * backfilling jobDescription and coverLetter on any legacy stored entries.
+ * Get current applications from local storage (starting clean with []),
+ * stripping any legacy demo sample rows while preserving all real applications
+ * and backfilling jobDescription/coverLetter if missing.
  */
 export function getStoredApplications() {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultApplications));
-      return defaultApplications;
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultApplications));
-      return defaultApplications;
+      return [];
     }
 
-    let didBackfill = false;
-    const migrated = parsed.map((app) => {
+    const withoutSamples = parsed.filter(
+      (app) => !SAMPLE_DEMO_SIGNATURES.some((s) => s.id === app.id && s.company === app.company)
+    );
+    let didModify = withoutSamples.length !== parsed.length;
+
+    const migrated = withoutSamples.map((app) => {
       const hasDescription = Boolean(app.jobDescription && app.jobDescription.trim());
       const hasCoverLetter = Boolean(app.coverLetter && app.coverLetter.trim());
       if (hasDescription && hasCoverLetter) {
         return app;
       }
 
-      didBackfill = true;
-      const defaultMatch = defaultApplications.find((d) => d.id === app.id);
+      didModify = true;
       const jobDescription = hasDescription
         ? app.jobDescription
-        : defaultMatch?.jobDescription ||
-          `Remote ${app.jobTitle || "Operations"} opportunity at ${app.company || "the hiring company"}.${
+        : `Remote ${app.jobTitle || "Operations"} opportunity at ${app.company || "the hiring company"}.${
             app.notes ? `\n\nApplication Notes: ${app.notes}` : ""
           }`;
 
       const coverLetter = hasCoverLetter
         ? app.coverLetter
-        : defaultMatch?.coverLetter ||
-          generateHumanCoverLetter({
+        : generateHumanCoverLetter({
             jobTitle: app.jobTitle,
             company: app.company,
             description: jobDescription,
@@ -106,14 +108,14 @@ export function getStoredApplications() {
       };
     });
 
-    if (didBackfill) {
+    if (didModify) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(migrated));
     }
 
     return migrated;
   } catch (err) {
     console.error("Error reading localStorage:", err);
-    return defaultApplications;
+    return [];
   }
 }
 
