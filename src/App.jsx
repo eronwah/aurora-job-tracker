@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import BackgroundMesh from './components/layout/BackgroundMesh';
 import Navbar from './components/layout/Navbar';
 import MobileNav from './components/layout/MobileNav';
+import SplashScreen from './components/layout/SplashScreen';
 import TableView from './components/tracker/TableView';
 import ApplicationModal from './components/tracker/ApplicationModal';
 import JobDetailModal from './components/tracker/JobDetailModal';
@@ -31,11 +32,13 @@ export default function App() {
   const [applications, setApplications] = useState([]);
   const [privateConfig, setPrivateConfig] = useState(() => getPrivateConfig());
   const [activeTab, setActiveTab] = useState('tracker'); // tracker | search | resume | sheet
+  const [showSplash, setShowSplash] = useState(true);
   
   // Create/Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [defaultStageForNew, setDefaultStageForNew] = useState('applied');
+  const [defaultPlatformForNew, setDefaultPlatformForNew] = useState('LinkedIn');
 
   // Job Detail & Cover Letter Modal state
   const [selectedJobId, setSelectedJobId] = useState(null);
@@ -158,6 +161,15 @@ export default function App() {
   // Quick Add from Table Empty State
   const handleQuickAddStage = (stageId) => {
     setDefaultStageForNew(stageId);
+    setDefaultPlatformForNew('LinkedIn');
+    setEditingApplication(null);
+    setIsModalOpen(true);
+  };
+
+  // Quick Log from Major Human Job Platform Launcher
+  const handleQuickLogFromPlatform = (platformName) => {
+    setDefaultStageForNew('applied');
+    setDefaultPlatformForNew(platformName || 'LinkedIn');
     setEditingApplication(null);
     setIsModalOpen(true);
   };
@@ -263,8 +275,11 @@ export default function App() {
     .reduce((sum, a) => sum + (a.salaryPhp || 0), 0);
 
   return (
-    <div className="relative min-h-screen text-slate-100 flex flex-col font-sans pb-20 lg:pb-10">
+    <div className="relative min-h-[100dvh] w-full max-w-full overflow-x-hidden text-slate-100 flex flex-col font-sans main-safe-bottom">
       
+      {/* Startup Professional Loading Splash Screen */}
+      {showSplash && <SplashScreen onFinished={() => setShowSplash(false)} />}
+
       {/* Background Liquid Aurora Mesh */}
       <BackgroundMesh />
 
@@ -274,6 +289,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenNewModal={() => {
           setDefaultStageForNew('applied');
+          setDefaultPlatformForNew('LinkedIn');
           setEditingApplication(null);
           setIsModalOpen(true);
         }}
@@ -346,16 +362,18 @@ export default function App() {
 
         </div>
 
-        {/* Pure Table Header (Only shown on Tracker tab) */}
+        {/* Pure Table Header & Overview Description (Only shown on Tracker tab) */}
         {activeTab === 'tracker' && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                 Application Pipeline
               </h2>
-              <p className="text-xs text-slate-400 font-medium mt-0.5 flex items-center space-x-1.5">
-                <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Click any job row to view the full job description &amp; ready-to-paste cover letter</span>
+              <p className="text-xs text-slate-300/90 font-medium mt-0.5 flex items-start sm:items-center space-x-1.5 leading-relaxed">
+                <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                <span>
+                  Track every remote application in PHP, tap any job row for its full description &amp; human-sounding cover letter, and keep Desktop &amp; iPhone synced with Google Sheets.
+                </span>
               </p>
             </div>
           </div>
@@ -375,6 +393,7 @@ export default function App() {
               onSelectJob={handleSelectJob}
               onQuickAdd={handleQuickAddStage}
               onClearAll={handleClearAll}
+              onOpenSearch={() => setActiveTab('search')}
             />
           )}
 
@@ -382,6 +401,7 @@ export default function App() {
             <JobSearchEngine
               onAddToTracker={handleAddFromSearch}
               existingApplications={applications}
+              onQuickLogFromPlatform={handleQuickLogFromPlatform}
             />
           )}
 
@@ -440,6 +460,7 @@ export default function App() {
         onSave={handleSaveApplication}
         initialData={editingApplication}
         defaultStage={defaultStageForNew}
+        defaultPlatform={defaultPlatformForNew}
       />
 
       {/* Floating Action Toast Notification */}

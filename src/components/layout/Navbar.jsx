@@ -22,9 +22,9 @@ export default function Navbar({
 }) {
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-emerald-500/15 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+    <header className="sticky top-0 z-40 w-full safe-top glass-panel border-b border-emerald-500/15 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20 gap-2">
           
           {/* Logo & Brand */}
           <div className="flex items-center space-x-2.5 flex-shrink-0">
@@ -149,7 +149,7 @@ export default function Navbar({
             {/* Add Application Button */}
             <button
               onClick={onOpenNewModal}
-              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:from-emerald-300 hover:to-teal-200 shadow-md shadow-emerald-500/25 transition-all transform hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              className="flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:from-emerald-300 hover:to-teal-200 shadow-md shadow-emerald-500/25 transition-all transform hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Add Job</span>

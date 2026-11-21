@@ -9,7 +9,8 @@ export default function ApplicationModal({
   onClose, 
   onSave, 
   initialData = null, 
-  defaultStage = 'applied' 
+  defaultStage = 'applied',
+  defaultPlatform = 'LinkedIn'
 }) {
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -18,7 +19,7 @@ export default function ApplicationModal({
     salaryDisplay: '₱55,000 / mo',
     status: defaultStage,
     jobUrl: '',
-    platform: 'Remotive',
+    platform: defaultPlatform,
     dateApplied: new Date().toISOString().slice(0, 10),
     followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     resumeUsed: 'Jesse_Aaron_Cuartero_Resume.pdf',
@@ -45,7 +46,7 @@ export default function ApplicationModal({
         salaryDisplay: '₱55,000 / mo',
         status: defaultStage,
         jobUrl: '',
-        platform: 'Remotive',
+        platform: defaultPlatform || 'LinkedIn',
         dateApplied: new Date().toISOString().slice(0, 10),
         followUpDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
         resumeUsed: 'Jesse_Aaron_Cuartero_Resume.pdf',
@@ -55,7 +56,7 @@ export default function ApplicationModal({
         location: '100% Remote'
       });
     }
-  }, [initialData, defaultStage, isOpen]);
+  }, [initialData, defaultStage, defaultPlatform, isOpen]);
 
   if (!isOpen) return null;
 
@@ -101,8 +102,8 @@ export default function ApplicationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg glass-panel rounded-3xl p-5 sm:p-7 border border-emerald-500/25 shadow-2xl shadow-emerald-500/10 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] bg-black/75 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg glass-panel rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 border border-emerald-500/25 shadow-2xl shadow-emerald-500/10 max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] sm:max-h-[90dvh] overflow-y-auto safe-bottom">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -163,12 +164,15 @@ export default function ApplicationModal({
                 onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input"
               >
-                <option value="Remotive">Remotive</option>
-                <option value="WeWorkRemotely">WeWorkRemotely</option>
-                <option value="Jobspresso">Jobspresso</option>
-                <option value="Dynamo Remote">Dynamo Remote</option>
-                <option value="OnlineJobs.ph">OnlineJobs.ph</option>
                 <option value="LinkedIn">LinkedIn</option>
+                <option value="Indeed">Indeed</option>
+                <option value="Upwork">Upwork</option>
+                <option value="OnlineJobs.ph">OnlineJobs.ph</option>
+                <option value="JobStreet PH">JobStreet PH</option>
+                <option value="WeWorkRemotely">WeWorkRemotely</option>
+                <option value="Remotive">Remotive</option>
+                <option value="Jobicy">Jobicy</option>
+                <option value="Arbeitnow">Arbeitnow</option>
                 <option value="Company Direct">Company Direct</option>
               </select>
             </div>

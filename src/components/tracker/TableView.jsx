@@ -11,7 +11,8 @@ import {
   Sparkles,
   Plus,
   RotateCcw,
-  ArrowUpDown
+  ArrowUpDown,
+  Briefcase
 } from 'lucide-react';
 
 export default function TableView({
@@ -21,7 +22,8 @@ export default function TableView({
   onStatusChange,
   onSelectJob,
   onQuickAdd,
-  onClearAll
+  onClearAll,
+  onOpenSearch
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -160,13 +162,25 @@ export default function TableView({
         </div>
       </div>
 
-      {/* Empty State */}
+      {/* Empty State / Clean Onboarding */}
       {filtered.length === 0 ? (
-        <div className="py-12 px-4 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 space-y-3">
-          <p className="text-sm font-semibold text-slate-300">
-            No applications found matching your current filter.
-          </p>
-          <div className="flex items-center justify-center gap-2.5">
+        <div className="py-12 px-5 text-center rounded-2xl border border-dashed border-emerald-500/25 bg-slate-900/40 space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+            <Briefcase className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-base font-bold text-white">
+              {applications.length === 0
+                ? 'Your Remote Job Pipeline Is Clean & Ready'
+                : 'No matching applications found'}
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {applications.length === 0
+                ? 'Search strictly remote openings across LinkedIn, Indeed, Upwork, OnlineJobs.ph, and verified non-AI feeds, or log an application manually with an instant human-sounding cover letter.'
+                : 'No applications match your current stage pill or search filter. Try resetting filters or adding a new job.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
             {(searchTerm || selectedStatus !== 'all') && (
               <button
                 type="button"
@@ -177,14 +191,24 @@ export default function TableView({
                 <span>Reset Filters</span>
               </button>
             )}
+            {onOpenSearch && (
+              <button
+                type="button"
+                onClick={onOpenSearch}
+                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/35 transition-all"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Search Major Job Platforms</span>
+              </button>
+            )}
             {onQuickAdd && (
               <button
                 type="button"
                 onClick={() => onQuickAdd(selectedStatus === 'all' ? 'applied' : selectedStatus)}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 transition-all"
+                className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 shadow-md shadow-emerald-500/20 transition-all"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Add Job</span>
+                <span>{applications.length === 0 ? 'Add First Application' : 'Add Job'}</span>
               </button>
             )}
           </div>

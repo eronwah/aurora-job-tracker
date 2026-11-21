@@ -108,14 +108,14 @@ export default function JobDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] bg-black/75 backdrop-blur-md"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="job-detail-modal-title"
     >
       <div
-        className="relative w-full sm:max-w-3xl glass-panel rounded-t-3xl sm:rounded-3xl border border-emerald-500/30 shadow-2xl shadow-emerald-500/15 max-h-[92vh] flex flex-col overflow-hidden bg-[#120920]/95"
+        className="relative w-full sm:max-w-3xl glass-panel rounded-t-3xl sm:rounded-3xl border border-emerald-500/30 shadow-2xl shadow-emerald-500/15 max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] sm:max-h-[90dvh] flex flex-col overflow-hidden bg-[#120920]/95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Modal Header */}

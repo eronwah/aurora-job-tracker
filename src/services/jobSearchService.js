@@ -2,23 +2,126 @@ import { calculateMatchScore } from "../utils/matchScore";
 import { parseSalaryToPhp, formatPhp, USD_TO_PHP_RATE } from "../utils/currency";
 import { generateHumanCoverLetter } from "../utils/coverLetterGenerator";
 
-// AI and automated scraper platforms that MUST be skipped per user requirement
-const AI_PLATFORM_BLACKLIST = [
+/**
+ * Domain/website-only blacklist of AI-operated job websites and AI auto-apply portals.
+ * NOTE: This ONLY excludes AI-run job platforms by website domain/platform name—it NEVER
+ * excludes legitimate job postings on human platforms that mention AI tools or automation.
+ */
+export const AI_JOB_PLATFORM_DOMAINS = [
   "lazyapply",
   "loopcv",
-  "sonara",
+  "sonara.ai",
   "autojob",
-  "aijobs",
+  "aijobs.net",
+  "ai-jobs.net",
+  "aijobboard",
   "jobai",
   "jobgpt",
   "botjob",
   "resumeworded",
-  "ai-job-search",
-  "careerflow",
+  "careerflow.ai",
   "massive.ai",
+  "usemassive",
   "talentprise",
-  "applyai"
+  "applyai",
+  "jobright.ai",
+  "simplify.jobs",
+  "aiapply.co",
+  "jobhire.ai",
+  "earnbetter",
+  "tealhq.com",
+  "scale.jobs",
+  "mercor.com",
+  "sorce.jobs",
+  "ai-job-search"
 ];
+
+export const SKILL_SEARCH_PRESETS = [
+  { id: "ops", label: "Operations & DB Admin", query: "Database Operations Administrator" },
+  { id: "workspace", label: "Google Sheets / Apps Script", query: "Google Sheets Apps Script" },
+  { id: "customer", label: "Customer Operations", query: "Customer Operations Specialist" },
+  { id: "qa", label: "QA & SOP Specialist", query: "Quality Assurance SOP" },
+  { id: "automation", label: "Workflow Automation", query: "Workflow Automation Operations" }
+];
+
+/**
+ * Builds pre-filtered strictly-remote search URLs across major established
+ * human job platforms (LinkedIn, Indeed, Upwork, OnlineJobs.ph, JobStreet PH, WeWorkRemotely).
+ */
+export function buildMajorPlatformSearches(keyword = "") {
+  const cleanKw = keyword.trim() || "Operations Administrator Google Sheets";
+  const encoded = encodeURIComponent(cleanKw);
+  const slug = cleanKw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "operations-specialist";
+
+  return [
+    {
+      id: "linkedin",
+      name: "LinkedIn Jobs",
+      platformValue: "LinkedIn",
+      badge: "Remote Filter (f_WT=2)",
+      description: "Global & APAC remote openings with verified company pages and direct hiring teams.",
+      url: `https://www.linkedin.com/jobs/search/?keywords=${encoded}&f_WT=2`,
+      accent: "cyan"
+    },
+    {
+      id: "indeed-ph",
+      name: "Indeed Philippines",
+      platformValue: "Indeed",
+      badge: "PH Remote Filter",
+      description: "Remote roles open to Philippines-based applicants with local & USD-equivalent PHP pay.",
+      url: `https://ph.indeed.com/jobs?q=${encoded}&l=Remote`,
+      accent: "indigo"
+    },
+    {
+      id: "indeed-global",
+      name: "Indeed Worldwide",
+      platformValue: "Indeed",
+      badge: "Strict Remote Filter",
+      description: "International remote listings filtered strictly to Remote positions.",
+      url: `https://www.indeed.com/jobs?q=${encoded}&sc=0kf%3Aattr(DSQF7)%3B`,
+      accent: "purple"
+    },
+    {
+      id: "upwork",
+      name: "Upwork",
+      platformValue: "Upwork",
+      badge: "Newest Contracts",
+      description: "Hourly & fixed-price remote operations, Google Workspace, and automation contracts.",
+      url: `https://www.upwork.com/nx/search/jobs/?q=${encoded}&sort=recency`,
+      accent: "emerald"
+    },
+    {
+      id: "onlinejobs",
+      name: "OnlineJobs.ph",
+      platformValue: "OnlineJobs.ph",
+      badge: "PH Direct Employers",
+      description: "Direct long-term remote roles with international clients hiring in PHP (₱40k–₱70k+).",
+      url: `https://www.onlinejobs.ph/jobseekers/jobsearch?jobkeyword=${encoded}`,
+      accent: "teal"
+    },
+    {
+      id: "jobstreet",
+      name: "JobStreet PH",
+      platformValue: "JobStreet PH",
+      badge: "Work From Home",
+      description: "Verified Philippine & BPO/corporate roles filtered to Work From Home setups.",
+      url: `https://ph.jobstreet.com/${slug}-jobs/work-from-home`,
+      accent: "amber"
+    },
+    {
+      id: "wwr",
+      name: "WeWorkRemotely",
+      platformValue: "WeWorkRemotely",
+      badge: "100% Remote Board",
+      description: "Human-moderated remote job board for operations, support, and systems roles.",
+      url: `https://weworkremotely.com/remote-jobs/search?term=${encoded}`,
+      accent: "emerald"
+    }
+  ];
+}
 
 function decodeHtmlEntities(str = "") {
   return str
@@ -45,9 +148,19 @@ function cleanJobDescriptionHtml(html = "") {
   return stripped.length > 1500 ? `${stripped.slice(0, 1500).trim()}...` : stripped;
 }
 
-function isAiSpamListing(company = "", url = "", title = "") {
-  const combined = `${company} ${url} ${title}`.toLowerCase();
-  return AI_PLATFORM_BLACKLIST.some((ai) => combined.includes(ai));
+/**
+ * Checks ONLY the job listing's URL hostname / platform origin against AI_JOB_PLATFORM_DOMAINS.
+ * Does NOT penalize or filter out legitimate roles mentioning AI skills in job titles/descriptions.
+ */
+function isAiJobPlatformUrl(url = "", platform = "") {
+  let host = "";
+  try {
+    if (url) host = new URL(url).hostname.toLowerCase();
+  } catch {
+    host = String(url || "").toLowerCase();
+  }
+  const target = `${host} ${String(url || "").toLowerCase()} ${String(platform || "").toLowerCase()}`;
+  return AI_JOB_PLATFORM_DOMAINS.some((domain) => target.includes(domain));
 }
 
 function isStrictRemoteLocation(location = "") {
@@ -100,7 +213,7 @@ async function fetchRemotiveJobs(keyword = "") {
 
   return rawJobs
     .filter((job) => {
-      if (isAiSpamListing(job.company_name, job.url, job.title)) return false;
+      if (isAiJobPlatformUrl(job.url, "Remotive")) return false;
       const loc = (job.candidate_required_location || "").toLowerCase();
       return (
         loc === "" ||
@@ -147,7 +260,7 @@ async function fetchJobicyJobs(keyword = "") {
 
   return rawJobs
     .filter((job) => {
-      if (isAiSpamListing(job.companyName, job.url, job.jobTitle)) return false;
+      if (isAiJobPlatformUrl(job.url, "Jobicy")) return false;
       return isStrictRemoteLocation(job.jobGeo);
     })
     .map((job) => {
@@ -197,7 +310,7 @@ async function fetchArbeitnowJobs() {
   return rawJobs
     .filter((job) => {
       if (job.remote !== true) return false;
-      if (isAiSpamListing(job.company_name, job.url, job.title)) return false;
+      if (isAiJobPlatformUrl(job.url, "Arbeitnow")) return false;
       return true;
     })
     .slice(0, 40)
@@ -218,12 +331,8 @@ async function fetchArbeitnowJobs() {
 
 /**
  * Searches 100% live remote jobs from non-AI verified remote boards
- * (Remotive, Jobicy, Arbeitnow) matching Jesse's skills and PHP target.
- *
- * @param {Object} options
- * @param {string} options.keyword - Optional keyword filter
- * @param {string} options.category - Target category filter
- * @returns {Promise<{ jobs: Array, sources: { remotive: number, jobicy: number, arbeitnow: number }, error: string | null }>}
+ * (Remotive, Jobicy, Arbeitnow) while keeping legitimate resume-matching roles
+ * (including AI/automation tools roles) and excluding only AI-run job websites.
  */
 export async function searchRemoteJobs({
   keyword = "",
@@ -316,7 +425,7 @@ export async function searchRemoteJobs({
     jobs: filtered,
     sources,
     error: allFailed
-      ? "Could not reach remote job boards right now. Check your internet/mobile data connection and tap Retry."
+      ? "Could not reach live remote feeds right now, but you can still launch LinkedIn, Indeed, Upwork, OnlineJobs.ph, and JobStreet PH directly above."
       : null
   };
 }
