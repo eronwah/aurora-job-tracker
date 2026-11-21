@@ -1,0 +1,459 @@
+import React, { useState, useEffect } from 'react';
+import {
+  X,
+  FileText,
+  Mail,
+  ExternalLink,
+  Pencil,
+  Trash2,
+  Copy,
+  Check,
+  Sparkles,
+  Building2,
+  MapPin,
+  Banknote,
+  Calendar,
+  Clock,
+  RefreshCw,
+  Save
+} from 'lucide-react';
+import { PIPELINE_STAGES } from '../../data/defaultApplications';
+import { formatPhp } from '../../utils/currency';
+import { generateHumanCoverLetter, countWords } from '../../utils/coverLetterGenerator';
+
+export default function JobDetailModal({
+  application,
+  isOpen,
+  initialTab = 'details',
+  onClose,
+  onUpdateApplication,
+  onEditFull,
+  onStatusChange,
+  onDelete
+}) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [draftDescription, setDraftDescription] = useState('');
+  const [draftCoverLetter, setDraftCoverLetter] = useState('');
+  const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
+
+  useEffect(() => {
+    setActiveTab(initialTab || 'details');
+  }, [initialTab, application?.id, isOpen]);
+
+  useEffect(() => {
+    if (application) {
+      setDraftDescription(application.jobDescription || '');
+      setDraftCoverLetter(
+        application.coverLetter ||
+          generateHumanCoverLetter({
+            jobTitle: application.jobTitle,
+            company: application.company,
+            description: application.jobDescription || '',
+            platform: application.platform || ''
+          })
+      );
+      setIsEditingDescription(false);
+    }
+  }, [application]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !application) return null;
+
+  const currentStage = PIPELINE_STAGES.find(s => s.id === application.status) || PIPELINE_STAGES[0];
+  const hasUnsavedCoverLetter = draftCoverLetter !== (application.coverLetter || '');
+
+  const handleSaveDescription = () => {
+    onUpdateApplication({
+      ...application,
+      jobDescription: draftDescription,
+      lastUpdated: new Date().toISOString()
+    });
+    setIsEditingDescription(false);
+  };
+
+  const handleSaveCoverLetter = () => {
+    onUpdateApplication({
+      ...application,
+      coverLetter: draftCoverLetter,
+      lastUpdated: new Date().toISOString()
+    });
+  };
+
+  const handleRegenerateCoverLetter = () => {
+    const fresh = generateHumanCoverLetter({
+      jobTitle: application.jobTitle,
+      company: application.company,
+      description: draftDescription || application.jobDescription || '',
+      platform: application.platform || ''
+    });
+    setDraftCoverLetter(fresh);
+  };
+
+  const handleCopyCoverLetter = () => {
+    navigator.clipboard.writeText(draftCoverLetter);
+    setCopiedCoverLetter(true);
+    setTimeout(() => setCopiedCoverLetter(false), 2000);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="job-detail-modal-title"
+    >
+      <div
+        className="relative w-full sm:max-w-3xl glass-panel rounded-t-3xl sm:rounded-3xl border border-emerald-500/30 shadow-2xl shadow-emerald-500/15 max-h-[92vh] flex flex-col overflow-hidden bg-[#120920]/95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Modal Header */}
+        <div className="p-5 sm:p-6 pb-4 border-b border-slate-800/90 flex-shrink-0">
+          {/* Mobile drag handle visual */}
+          <div className="sm:hidden w-12 h-1 rounded-full bg-slate-700 mx-auto mb-3" />
+
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  {application.platform || 'Direct'}
+                </span>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 flex items-center space-x-1">
+                  <MapPin className="w-3 h-3 text-emerald-400" />
+                  <span>{application.location || '100% Remote'}</span>
+                </span>
+                {application.matchScore && (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/35 flex items-center space-x-1">
+                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                    <span>{application.matchScore}% Match</span>
+                  </span>
+                )}
+              </div>
+
+              <h3
+                id="job-detail-modal-title"
+                className="text-lg sm:text-xl font-extrabold text-white leading-snug"
+              >
+                {application.jobTitle}
+              </h3>
+
+              <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                <div className="flex items-center space-x-1.5 text-xs sm:text-sm text-slate-300 font-semibold">
+                  <Building2 className="w-4 h-4 text-purple-400" />
+                  <span>{application.company}</span>
+                </div>
+
+                {/* Inline Stage Dropdown */}
+                <select
+                  value={application.status}
+                  onChange={(e) => onStatusChange(application.id, e.target.value)}
+                  className={`text-xs font-semibold py-1 px-2.5 rounded-lg border focus:outline-none cursor-pointer ${currentStage.badge}`}
+                  aria-label="Change pipeline stage"
+                >
+                  {PIPELINE_STAGES.map(s => (
+                    <option key={s.id} value={s.id} className="bg-slate-900 text-slate-200">
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all flex-shrink-0"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Liquid Aurora Segmented Tab Switcher */}
+          <div className="mt-4 grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-900/85 border border-purple-500/20">
+            <button
+              type="button"
+              onClick={() => setActiveTab('details')}
+              className={`flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'details'
+                  ? 'bg-gradient-to-r from-emerald-500/25 to-teal-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Job Details &amp; Description</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('coverLetter')}
+              className={`flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                activeTab === 'coverLetter'
+                  ? 'bg-gradient-to-r from-purple-500/25 to-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Mail className="w-4 h-4" />
+              <span>Cover Letter</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {activeTab === 'details' && (
+            <>
+              {/* Metadata 2x2 / 4-col Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
+                    <Banknote className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Salary (PHP)</span>
+                  </div>
+                  <div className="mt-1 text-xs sm:text-sm font-extrabold text-emerald-300">
+                    {application.salaryPhp
+                      ? `${formatPhp(application.salaryPhp)} / mo`
+                      : application.salaryDisplay || '—'}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+                  <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
+                    <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Applied Date</span>
+                  </div>
+                  <div className="mt-1 text-xs sm:text-sm font-bold text-slate-200">
+                    {application.dateApplied || '—'}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+                  <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Follow-Up</span>
+                  </div>
+                  <div className="mt-1 text-xs sm:text-sm font-bold text-amber-300">
+                    {application.followUpDate || '—'}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+                  <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-semibold">
+                    <FileText className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Resume Used</span>
+                  </div>
+                  <div className="mt-1 text-xs font-semibold text-slate-200 truncate" title={application.resumeUsed}>
+                    {application.resumeUsed || 'Jesse_Aaron_Cuartero_Resume.pdf'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Job Description Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-purple-500/20 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-300">
+                    Job Description
+                  </h4>
+                  {!isEditingDescription && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDescription(true)}
+                      className="flex items-center space-x-1 text-xs font-semibold text-slate-400 hover:text-emerald-300 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>{application.jobDescription ? 'Edit Description' : 'Paste Job Description'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {isEditingDescription ? (
+                  <div className="space-y-2.5">
+                    <textarea
+                      rows="8"
+                      value={draftDescription}
+                      onChange={(e) => setDraftDescription(e.target.value)}
+                      placeholder="Paste or type the full job description here..."
+                      className="w-full p-3.5 rounded-xl glass-input text-xs sm:text-sm leading-relaxed resize-y"
+                    />
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftDescription(application.jobDescription || '');
+                          setIsEditingDescription(false);
+                        }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveDescription}
+                        className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Description</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : application.jobDescription ? (
+                  <div className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed">
+                    {application.jobDescription}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center space-y-2 border border-dashed border-slate-800 rounded-xl">
+                    <p className="text-xs text-slate-400">No job description saved for this listing yet.</p>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDescription(true)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25"
+                    >
+                      Paste Job Description
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes Box */}
+              <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-300 block">
+                  Notes &amp; Application Context
+                </span>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  {application.notes || 'No personal notes added yet. Click "Edit Full Info" below to add interview notes or recruiter contacts.'}
+                </p>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'coverLetter' && (
+            <div className="space-y-4">
+              {/* Cover Letter Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="text-sm font-bold text-white">Ready-to-Paste Cover Letter</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    Natural &amp; Non-Aggressive
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400 font-medium">
+                  {countWords(draftCoverLetter)} words
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tailored to Jesse&apos;s real experience (Google Workspace, Apps Script, SOPs, Customer Ops &amp; QA) with a relaxed, human tone. Feel free to edit directly below before copying.
+              </p>
+
+              {/* Editable Cover Letter Textarea */}
+              <textarea
+                rows="11"
+                value={draftCoverLetter}
+                onChange={(e) => setDraftCoverLetter(e.target.value)}
+                className="w-full p-4 rounded-2xl glass-input text-xs sm:text-sm leading-relaxed text-slate-100 resize-y"
+                aria-label="Editable cover letter"
+              />
+
+              {/* Cover Letter Action Row */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRegenerateCoverLetter}
+                    className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Regenerate Draft</span>
+                  </button>
+
+                  {hasUnsavedCoverLetter && (
+                    <button
+                      type="button"
+                      onClick={handleSaveCoverLetter}
+                      className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 transition-all"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Edits</span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyCoverLetter}
+                  className="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:from-emerald-300 hover:to-teal-200 shadow-lg shadow-emerald-500/25 transition-all"
+                >
+                  {copiedCoverLetter ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Copy Cover Letter</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sticky Modal Footer */}
+        <div className="p-4 sm:px-6 border-t border-slate-800/90 bg-[#0d0618]/90 flex flex-wrap items-center justify-between gap-2.5 safe-bottom flex-shrink-0">
+          <div>
+            {application.jobUrl ? (
+              <a
+                href={application.jobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all"
+              >
+                <span>Open Job Link</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            ) : (
+              <span className="text-xs text-slate-500">No job link attached</span>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onEditFull(application);
+              }}
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800/80 hover:bg-purple-500/20 hover:text-purple-200 border border-slate-700 transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Full Info</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onDelete(application.id)}
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 bg-slate-800/80 hover:bg-rose-500/20 border border-slate-700 transition-all"
+              title="Delete Application"
+              aria-label="Delete application"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

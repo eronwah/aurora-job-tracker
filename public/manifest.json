@@ -1,0 +1,17 @@
+{
+  "name": "Aurora Jobs — Remote Job Tracker",
+  "short_name": "AuroraJobs",
+  "description": "Daily Remote Job Application Tracker, Live Non-AI Job Search, Resume Hub & Two-Way Google Sheet Sync",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08040d",
+  "theme_color": "#08040d",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%230d0718'/><rect x='14' y='24' width='36' height='26' rx='4' fill='none' stroke='%2300e599' stroke-width='4'/><path d='M24 24v-6a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v6' fill='none' stroke='%2300e599' stroke-width='4'/></svg>",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}

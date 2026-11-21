@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-aurora-bg: #08040d;
+  --color-aurora-emerald: #00e599;
+  --color-aurora-violet: #8b5cf6;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #08040d;
+  color: #f1f5f9;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 8, 25, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 153, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 153, 0.5);
+}
+
+/* Glassmorphic Aurora Card */
+.glass-panel {
+  background: rgba(22, 13, 36, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 229, 153, 0.12);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(28, 17, 46, 0.78);
+  border-color: rgba(0, 229, 153, 0.32);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px -10px rgba(0, 229, 153, 0.15), 0 0 20px -5px rgba(139, 92, 246, 0.2);
+}
+
+/* Glass Input */
+.glass-input {
+  background: rgba(15, 8, 26, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  backdrop-filter: blur(12px);
+  color: #f8fafc;
+  transition: all 0.2s ease;
+}
+.glass-input:focus {
+  outline: none;
+  border-color: #00e599;
+  box-shadow: 0 0 0 2px rgba(0, 229, 153, 0.25);
+  background: rgba(20, 10, 34, 0.85);
+}
+
+/* Safe areas for iPhone 17 Pro Max */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
