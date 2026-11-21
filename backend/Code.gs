@@ -2,19 +2,31 @@
  * Google Apps Script Backend for Aurora Jobs Tracker
  * Handles 14-column GET and POST endpoints for real-time two-way synchronization
  * with the React web application (including Job Description & Cover Letter).
+ *
+ * Works both when container-bound inside a Google Sheet AND when deployed
+ * as a standalone Apps Script project (via SPREADSHEET_ID fallback).
  */
+
+var SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID_HERE';
+
+function getTargetSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return ss.getSheets()[0];
+}
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
   
   try {
-    var rawData = e.postData.contents;
+    var rawData = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
     var payload = JSON.parse(rawData);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var sheet = getTargetSheet_();
     
     if (payload.action === 'syncAll' && Array.isArray(payload.applications)) {
-      // Ensure 14-column header row is present
       var headers = [
         'ID',
         'Job Title',
@@ -33,13 +45,11 @@ function doPost(e) {
       ];
       sheet.getRange(1, 1, 1, 14).setValues([headers]);
 
-      // Clear all existing data rows starting from row 2
       var lastRow = sheet.getLastRow();
       if (lastRow > 1) {
         sheet.getRange(2, 1, lastRow - 1, 14).clearContent();
       }
       
-      // Transform incoming application objects into 14-column 2D row array
       var rows = payload.applications.map(function(app) {
         return [
           app.id || '',
@@ -80,29 +90,46 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getDataRange().getValues();
-  var rows = data.slice(1);
-  
-  var result = rows.map(function(row) {
-    return {
-      id: row[0],
-      jobTitle: row[1],
-      company: row[2],
-      salaryDisplay: row[3],
-      status: row[4],
-      jobUrl: row[5],
-      platform: row[6],
-      dateApplied: row[7],
-      followUpDate: row[8],
-      resumeUsed: row[9],
-      notes: row[10],
-      lastUpdated: row[11],
-      jobDescription: row[12] || '',
-      coverLetter: row[13] || ''
-    };
-  });
-  
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    var sheet = getTargetSheet_();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return ContentService.createTextOutput('[]')
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Use getDisplayValues() so dates (YYYY-MM-DD) and PHP currency strings do not timezone-shift
+    var data = sheet.getRange(2, 1, lastRow - 1, 14).getDisplayValues();
+    
+    var result = data
+      .filter(function(row) {
+        return row[1] || row[2];
+      })
+      .map(function(row) {
+        return {
+          id: row[0],
+          jobTitle: row[1],
+          company: row[2],
+          salaryDisplay: row[3],
+          status: row[4],
+          jobUrl: row[5],
+          platform: row[6],
+          dateApplied: row[7],
+          followUpDate: row[8],
+          resumeUsed: row[9],
+          notes: row[10],
+          lastUpdated: row[11],
+          jobDescription: row[12] || '',
+          coverLetter: row[13] || ''
+        };
+      });
+    
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }

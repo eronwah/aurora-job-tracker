@@ -25,16 +25,27 @@ import {
 const APPS_SCRIPT_CODE = `/**
  * Google Apps Script Backend for Aurora Jobs Tracker
  * Handles 14-column real-time two-way sync (doGet + doPost)
+ * Works both standalone (via SPREADSHEET_ID) and container-bound.
  */
+
+var SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID_HERE';
+
+function getTargetSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return ss.getSheets()[0];
+}
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
   
   try {
-    var rawData = e.postData.contents;
+    var rawData = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
     var payload = JSON.parse(rawData);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var sheet = getTargetSheet_();
     
     if (payload.action === 'syncAll' && Array.isArray(payload.applications)) {
       var headers = [
@@ -100,31 +111,47 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getDataRange().getValues();
-  var rows = data.slice(1);
-  
-  var result = rows.map(function(row) {
-    return {
-      id: row[0],
-      jobTitle: row[1],
-      company: row[2],
-      salaryDisplay: row[3],
-      status: row[4],
-      jobUrl: row[5],
-      platform: row[6],
-      dateApplied: row[7],
-      followUpDate: row[8],
-      resumeUsed: row[9],
-      notes: row[10],
-      lastUpdated: row[11],
-      jobDescription: row[12] || '',
-      coverLetter: row[13] || ''
-    };
-  });
-  
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    var sheet = getTargetSheet_();
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return ContentService.createTextOutput('[]')
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = sheet.getRange(2, 1, lastRow - 1, 14).getDisplayValues();
+    
+    var result = data
+      .filter(function(row) {
+        return row[1] || row[2];
+      })
+      .map(function(row) {
+        return {
+          id: row[0],
+          jobTitle: row[1],
+          company: row[2],
+          salaryDisplay: row[3],
+          status: row[4],
+          jobUrl: row[5],
+          platform: row[6],
+          dateApplied: row[7],
+          followUpDate: row[8],
+          resumeUsed: row[9],
+          notes: row[10],
+          lastUpdated: row[11],
+          jobDescription: row[12] || '',
+          coverLetter: row[13] || ''
+        };
+      });
+    
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }`;
 
 export default function GoogleSheetSync({ 

@@ -1,6 +1,9 @@
 const PRIVATE_CONFIG_KEY = "aurora_job_tracker_private_config";
 const LEGACY_GAS_KEY = "aurora_job_tracker_gas_url";
 
+export const DEFAULT_GAS_WEBHOOK_URL =
+  "https://script.google.com/macros/s/AKfycby7paz2luBvIHrne6N_ya6J0DKhn1Dn16da9JWaLgXhkRwYALT4ZzMJOZ1Ck5ROVnJTCg/exec";
+
 const DEFAULT_PRIVATE_CONFIG = {
   email: "",
   phone: "",
@@ -8,13 +11,14 @@ const DEFAULT_PRIVATE_CONFIG = {
   linkedin: "",
   driveResumeUrl: "",
   sheetUrl: "",
-  gasWebhookUrl: ""
+  gasWebhookUrl: DEFAULT_GAS_WEBHOOK_URL
 };
 
 /**
  * Loads user-specific private contact details, Google Drive resume link,
- * Google Sheet URL, and Apps Script webhook URL exclusively from browser localStorage.
- * Keeps public GitHub repositories free of personal contact details or private file IDs.
+ * Google Sheet URL, and Apps Script webhook URL from browser localStorage,
+ * falling back to the pre-wired Google Apps Script /exec endpoint so Desktop
+ * and iPhone stay synced automatically without pasting URLs.
  */
 export function getPrivateConfig() {
   try {
@@ -24,7 +28,7 @@ export function getPrivateConfig() {
     if (!raw) {
       return {
         ...DEFAULT_PRIVATE_CONFIG,
-        gasWebhookUrl: legacyGasUrl
+        gasWebhookUrl: legacyGasUrl || DEFAULT_GAS_WEBHOOK_URL
       };
     }
 
@@ -33,7 +37,7 @@ export function getPrivateConfig() {
       ...DEFAULT_PRIVATE_CONFIG,
       ...parsed,
       location: parsed.location || DEFAULT_PRIVATE_CONFIG.location,
-      gasWebhookUrl: parsed.gasWebhookUrl || legacyGasUrl
+      gasWebhookUrl: parsed.gasWebhookUrl || legacyGasUrl || DEFAULT_GAS_WEBHOOK_URL
     };
   } catch (err) {
     console.error("Failed to read private config:", err);
